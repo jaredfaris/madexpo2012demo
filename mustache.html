@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <title>Mustache</title>
+        <script type="text/javascript" src="jquery.min.js"></script>
+        <script type="text/javascript" src="mustache.js"></script>
+    </head>
+
+    <body>
+
+        <div id="target"></div>
+
+        <script type="text/html" id="exampleTemplate">
+            <h1>My Items</h1>
+            <div>
+                {{#.}}
+                    <h2>{{name}}</h2>
+                {{/.}}
+            </div>
+        </script>
+
+        <script type="text/javascript">
+            $(document).ready(
+                function(){
+                    var viewModel = [{name: "Bob"}, {name: "Emma"}];
+                    var output = Mustache.render($('#exampleTemplate').get(0).text, viewModel)
+                    $(output).appendTo($('#target'));
+                }
+            )
+        </script>
+
+    </body>
+</html>

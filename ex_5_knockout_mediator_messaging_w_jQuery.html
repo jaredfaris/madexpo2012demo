@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Example 5 - KO + Mediator + Messaging + jQuery</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="knockout-2.0.0.js"></script>
+    <script type="text/javascript" src="underscore-min.js"></script>
+    <script type="text/javascript" src="postal.js"></script>
+</head>
+<body>
+
+
+
+<div class="navigation">
+    <div data-bind="foreach: objects">
+        <div class="item" data-bind="text: label, attr: {'data-itemid': id}, css: {selected: selected}"></div>
+    </div>
+
+    <div id="unselectAllItems">Unselect All</div>
+</div>
+
+<div class="report">
+
+</div>
+
+
+
+
+
+<script type="text/javascript">
+window.reportMediator = {
+    setup: function(){
+        myChan = postal.channel("NavChannel","Select")
+        myChan.subscribe(function(data) {
+            $('.report').text(data.label_selected)
+        })
+    }
+}
+
+window.navMediator = {
+
+    navViewModel: {},
+
+    setup: function() {
+        navViewModel = {
+            objects: ko.observableArray([
+                {label: "First", id: 1},
+                {label: "Second", id: 2},
+                {label: "Third", id: 3}
+            ])
+        }
+
+        for(ob in navViewModel.objects()) {
+            object = navViewModel.objects()[ob]
+
+            object.selected = ko.observable(false)
+        }
+    },
+
+    select: function(id){
+        // We're going to use some underscore here
+        // Think of filter as find_all or where
+        // Find the other items
+        otherItems = _.filter(navViewModel.objects(), function(item) {
+            return item.id != id
+        })
+
+        // Unselect them by calling a function on each
+        _.each(otherItems, function(item) {
+            item.selected(false)
+        })
+
+        selectedItem = _.find(navViewModel.objects(), function(item) {
+            return item.id == id
+        })
+
+        selectedItem.selected(true)
+
+        // Publish a message for others to consume
+        myChan = postal.channel("NavChannel","Select")
+        myChan.publish({label_selected: selectedItem.label})
+
+
+    },
+
+    unselectAll: function(){
+        // Loop through each item and unselect it
+        _.each(navViewModel.objects(), function(item) {
+            item.selected(false)
+        })
+    },
+
+
+    render: function(){
+        ko.applyBindings(navViewModel, $('.navigation')[0])
+    },
+
+    bindSelectionEvents: function() {
+        // Bind the item's click using the data attribute
+        $('.navigation').on('click', '.item', function(){
+            id = $(this).data('itemid')
+            navMediator.select(id)
+        })
+
+        // Let's bind the unselect all to call a method on the mediator
+        $('#unselectAllItems').on('click',function(){
+            navMediator.unselectAll()
+        })
+
+    }
+}
+
+
+$(function() {
+    navMediator = window.navMediator
+    navMediator.setup()
+    navMediator.render()
+    navMediator.bindSelectionEvents()
+
+
+    window.reportMediator.setup()
+})
+</script>
+
+</body>
+</html>
